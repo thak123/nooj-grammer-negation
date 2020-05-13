@@ -24,7 +24,7 @@ import itertools
 #PLACEHOLDERS
 
 columns = {0: '#token', 1: 'negation_scope'}
-
+OTHER_TAG = "O"
 GOLD_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/conandoyle_train.conllu"
 PRED_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/565.txt"
 
@@ -58,17 +58,23 @@ for zipped_tokens in _read():
         sentence_tokens.append(token)
         tag_tokens.append(tag.replace("_","-"))
     sentence = " ".join(sentence_tokens)
-    sentence_dict[sentence]=tag_tokens
+    if sentence in sentence_dict:
+        print("found same entity")
+    else:
+        sentence_dict[sentence]=tag_tokens
     # print(">")
 
 y_true = []
 y_pred= []
-
 with open(PRED_TRAIN_FILE_PATH) as input_file:
+    last_index = 0
     for index,line in enumerate(input_file):
         line =line.strip()
         sentence ,tagged_sentence = (line.split("/"))
-        tagged_sentence_tokens =tagged_sentence.split(">#<")[:-1]
+        if ">#<" in tagged_sentence:
+            tagged_sentence_tokens =tagged_sentence.split(">#<")[:-1]
+        elif "NEG-CUE#<" in tagged_sentence:
+            tagged_sentence_tokens =[tagged_sentence[1:-2]]
         selected_text = []
         selected_text_tags =[]
         full_text = []
@@ -81,8 +87,10 @@ with open(PRED_TRAIN_FILE_PATH) as input_file:
             if "NEG-CUE#" in i:
                 negated_token =i.split(",")[0].replace("NEG-CUE#<","")
                 # print(negated_token, "\t", "B-NEG")
+                if  "<" in negated_token:
+                    negated_token = negated_token.replace("<","")
+
                 selected_text.append(negated_token)
-                
                 if not previous_first_negated:
                     scope_tag = "B-cue" 
                     previous_first_negated = True
@@ -116,19 +124,21 @@ with open(PRED_TRAIN_FILE_PATH) as input_file:
         selected_text = " ".join(selected_text)
         # print(selected_text)
         len_st = len(selected_text)
-        for tweet_index in (i for i, e in enumerate(sentence_dict.keys()) if selected_text in e):
-            tweet = list(sentence_dict.keys())[tweet_index]
+        sample_sent_dict = list(sentence_dict.keys())
+        for tweet_index in (i for i, e in enumerate(sample_sent_dict) if selected_text in e):
+            tweet = sample_sent_dict[tweet_index]
             ind = tweet.find(selected_text)
             text_tags = []
             if tweet[ind: ind+len_st] == selected_text:
-                [text_tags.append("0") for i in tweet[0:ind].split()]
+                last_index = tweet_index
+                [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
                 [text_tags.append(i) for i in selected_text_tags]
-                [text_tags.append("0") for i in tweet[ind+len_st:].split()]
+                [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
                 # print(selected_text_tags, tweet[0:ind].split(),tweet[ind+len_st:].split())
                 if len(sentence_dict[tweet])== len(text_tags):
                     print("Text: ",tweet)
-                    print(list(zip(tweet.split(), sentence_dict[tweet],text_tags)))
-                
+                    for i in list(zip(tweet.split(), sentence_dict[tweet],text_tags)):
+                        print(i)
                     y_true.append(sentence_dict[tweet])
                     y_pred.append(text_tags)
                     print("F1", f1_score(sentence_dict[tweet], text_tags))
@@ -137,6 +147,8 @@ with open(PRED_TRAIN_FILE_PATH) as input_file:
                     break
                 else:
                     print("length not matching")
+            else:
+                print("Something happened")
         # if index >5:  break
     print("Over >")
 
