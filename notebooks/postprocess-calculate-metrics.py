@@ -26,7 +26,7 @@ import itertools
 columns = {0: '#token', 1: 'negation_scope'}
 OTHER_TAG = "O"
 GOLD_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/conandoyle_train.conllu"
-PRED_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/565.txt"
+PRED_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/565v3.txt"
 
 GOLD_DEV_FILE_PATH = ""
 PRED_DEV_FILE_PATH = ""
