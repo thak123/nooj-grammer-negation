@@ -16,10 +16,12 @@ import re
 
 columns = {0: '#token', 1: 'negation_scope'}
 OTHER_TAG = "O"
-GOLD_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/conandoyle_train.conllu"
-PRED_TRAIN_FILE_PATH = "/media/gaurish/angela/projects/nooj-grammer-negation/565v3.txt"
-SOURCE_FILE_PATH = "notebooks/conandoyle_train.html"
+split= "test" # train, dev, test
+GOLD_TRAIN_FILE_PATH = f"/media/gaurish/angela/projects/nooj-grammer-negation/cd_connlu/conandoyle_{split}.conllu"
+PRED_TRAIN_FILE_PATH = f"/media/gaurish/angela/projects/nooj-grammer-negation/cd_connlu/conandoyle_graph_annotation.{split}.txt"
+SOURCE_FILE_PATH = f"notebooks/conandoyle_{split}.html"
 
+OUTPUT_FILE_PATH = ""
 
 GOLD_DEV_FILE_PATH = ""
 PRED_DEV_FILE_PATH = ""
@@ -70,6 +72,10 @@ y_pred= []
 current_j_index=0
 
 from collections import defaultdict 
+
+# we will use this to export nooj annotated data
+nooj_train_pred_dict = defaultdict(list) 
+
 red_sentence_dict= defaultdict(list) 
 
 target_lines = []
@@ -160,145 +166,87 @@ def return_word_tag(tagged_sentence):
     return selected_text,selected_text_tags
 import copy
 counter = 0
-for red_sent in list(red_sentence_dict.keys()):
-    key = red_sent.replace("<red>","").replace("</red>","")
-    gold_tags = sentence_dict[key]
-    pred_tags_collection = red_sentence_dict[red_sent]
-    counter +=1
-    # if counter ==449 :
-        # g = input("Enter your name : ") 
-        # pass
-    print(gold_tags,key.split(),counter)
-    blank_tags = [OTHER_TAG]*len(key.split())
-    last_index =0
-    text_tags_collection=[]
-    for pred_tags in pred_tags_collection:
-        selected_text, selected_text_tags = return_word_tag(pred_tags)
-        # need to put this tags in the gold tags
-        selected_text = " ".join(selected_text)
-        len_st = len(selected_text)
-        tweet = key
-        ind = tweet.find(selected_text,last_index)
-        text_tags = []
-        if tweet[ind: ind+len_st] == selected_text:
-            last_index  =ind
-            if selected_text.split()[0] in ['s','ve','ll','m','d','re','n'] and tweet[ind-1]=="'":
-                [text_tags.append(OTHER_TAG) for i in tweet[0:ind-1].split()]
-                [text_tags.append(i) for i in selected_text_tags]
-                [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
-            elif selected_text.split()[0] in ['t'] and tweet[ind-2:ind]=="n'":
-                [text_tags.append(OTHER_TAG) for i in tweet[0:ind-2].split()]
-                [text_tags.append(i) for i in selected_text_tags]
-                [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
-            elif selected_text.split()[-1] in ['L',"Mrs"] and tweet[ind+ind+len_st:ind+ind+len_st+1]==".":
-                [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
-                [text_tags.append(i) for i in selected_text_tags]
-                [text_tags.append(OTHER_TAG) for i in tweet[ind+1+len_st:].split()]
-            else:
-                [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
-                [text_tags.append(i) for i in selected_text_tags]
-                [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
-            text_tags_collection.append(text_tags)
-        print()
-
-    final_tag = copy.deepcopy(text_tags_collection[0])
-    for t_index, t in enumerate(text_tags_collection[0]):
-        prev_value  = OTHER_TAG
-        if len(text_tags_collection)>1:
-            for i_index in range(1, len(text_tags_collection)):
-                if text_tags_collection[i_index][t_index] != OTHER_TAG:
-                    final_tag[t_index]= text_tags_collection[i_index][t_index]
-    print(final_tag)
-    if len(sentence_dict[key]) != len(final_tag):
-        print("not fine")
-        sys.exit()
-    else:
-        for i in list(zip(tweet.split(), sentence_dict[tweet],final_tag)):
-            print(i)
-        y_true.append(sentence_dict[tweet])
-        y_pred.append(final_tag)
-        print("F1", f1_score(sentence_dict[tweet], final_tag))
-        print("ACC", accuracy_score(sentence_dict[tweet], final_tag)) 
-        print("Report:", classification_report(sentence_dict[tweet], final_tag))
-
-# with open(PRED_TRAIN_FILE_PATH) as input_file:
-#     last_index = 0
-#     for index,line in enumerate(input_file):
-#         line =line.strip()
-#         sentence ,tagged_sentence = (line.split("/"))
-#         if ">#<" in tagged_sentence:
-#             tagged_sentence_tokens =tagged_sentence.split(">#<")[:-1]
-#         elif "NEG-CUE#<" in tagged_sentence:
-#             tagged_sentence_tokens =[tagged_sentence[1:-2]]
-#         selected_text = []
-#         selected_text_tags =[]
-#         full_text = []
-#         previous_negated = False
-#         previous_first_negated =False
-#         for t_index, i in enumerate(tagged_sentence_tokens):
-#             scope_tag = ""
-            
-#             #check if negation or scope    
-#             if "NEG-CUE#" in i:
-#                 negated_token =i.split(",")[0].replace("NEG-CUE#<","")
-#                 # print(negated_token, "\t", "B-NEG")
-#                 if  "<" in negated_token:
-#                     negated_token = negated_token.replace("<","")
-
-#                 selected_text.append(negated_token)
-#                 if not previous_first_negated:
-#                     scope_tag = "B-cue" 
-#                     previous_first_negated = True
-#                 else:
-#                     scope_tag = "I-cue"
-#                     previous_first_negated = False
-
-#                 previous_negated =True
-#             else:
-#                 # scope
-#                 # not negated/scope and 
-#                 if t_index ==0 or previous_negated == True:
-#                     scope_tag = "B-scope"
-#                     previous_negated = False
-#                 else:
-#                     scope_tag = "I-scope"
-#                 if  "<" in i:
-#                     i = i.replace("<","")
-#                     selected_text.append(i.split(",")[1])
+with open(f"unlabelled_conandoyle_{split}.csv","w") as ucd_train:
+    for red_sent in list(red_sentence_dict.keys()):
+        key = red_sent.replace("<red>","").replace("</red>","")
+        gold_tags = sentence_dict[key]
+        pred_tags_collection = red_sentence_dict[red_sent]
+        counter +=1
+        if counter ==27 :
+            g = input("Enter your name : ") 
+            pass
+        print(gold_tags,key.split(),counter)
+        blank_tags = [OTHER_TAG]*len(key.split())
+        last_index =0
+        text_tags_collection=[]
+        for pred_tags in pred_tags_collection:
+            selected_text, selected_text_tags = return_word_tag(pred_tags)
+            # need to put this tags in the gold tags
+            selected_text = " ".join(selected_text)
+            len_st = len(selected_text)
+            tweet = key
+            ind = tweet.find(selected_text,last_index)
+            text_tags = []
+            if tweet[ind: ind+len_st] == selected_text:
+                last_index  =ind
+                if selected_text.split()[0] in ['s','ve','ll','m','d','re','n'] and tweet[ind-1]=="'":
+                    [text_tags.append(OTHER_TAG) for i in tweet[0:ind-1].split()]
+                    [text_tags.append(i) for i in selected_text_tags]
+                    [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
+                elif selected_text.split()[0] in ['t'] and tweet[ind-2:ind]=="n'":
+                    [text_tags.append(OTHER_TAG) for i in tweet[0:ind-2].split()]
+                    [text_tags.append(i) for i in selected_text_tags]
+                    [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
+                elif selected_text.split()[-1] in ['L',"Mrs","Mr"] and tweet[ind+len_st:ind+len_st+1]==".":
+                    [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
+                    [text_tags.append(i) for i in selected_text_tags]
+                    [text_tags.append(OTHER_TAG) for i in tweet[ind+1+len_st:].split()]
+                elif tweet[ind-1]=="-":
+                    word_len =  tweet[0:ind].split()[-1]
+                    [text_tags.append(OTHER_TAG) for i in tweet[0:ind-len(word_len)].split()]
+                    [text_tags.append(i) for i in selected_text_tags]
+                    [text_tags.append(OTHER_TAG) for i in tweet[ind+1+len_st:].split()]
                     
-#                 else:
-#                     selected_text.append(i.split(",")[0])
-#             selected_text_tags.append(scope_tag)
-#         selected_text = " ".join(selected_text)
-#         len_st = len(selected_text)
-#         sample_sent_dict = list(sentence_dict.keys())
-#         for tweet_index in (i for i, e in enumerate(sample_sent_dict) if selected_text in e):
-#             tweet = sample_sent_dict[tweet_index]
-#             ind = tweet.find(selected_text)
-#             text_tags = []
-#             if tweet[ind: ind+len_st] == selected_text:
-#                 last_index = tweet_index
-#                 [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
-#                 [text_tags.append(i) for i in selected_text_tags]
-#                 [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
-#                 if len(sentence_dict[tweet])== len(text_tags):
-#                     print("Text: ",tweet)
-#                     for i in list(zip(tweet.split(), sentence_dict[tweet],text_tags)):
-#                         print(i)
-#                     y_true.append(sentence_dict[tweet])
-#                     y_pred.append(text_tags)
-#                     print("F1", f1_score(sentence_dict[tweet], text_tags))
-#                     print("ACC", accuracy_score(sentence_dict[tweet], text_tags)) 
-#                     print("Report:", classification_report(sentence_dict[tweet], text_tags))
-#                     break
-#                 else:
-#                     print("length not matching")
-#             else:
-#                 print("Something happened")
-#         # if index >5:  break
-#     print("Over >")
+                else:
+                    [text_tags.append(OTHER_TAG) for i in tweet[0:ind].split()]
+                    [text_tags.append(i) for i in selected_text_tags]
+                    [text_tags.append(OTHER_TAG) for i in tweet[ind+len_st:].split()]
+                text_tags_collection.append(text_tags)
+            print()
 
+        final_tag = copy.deepcopy(text_tags_collection[0])
+        for t_index, t in enumerate(text_tags_collection[0]):
+            prev_value  = OTHER_TAG
+            if len(text_tags_collection)>1:
+                for i_index in range(1, len(text_tags_collection)):
+                    if text_tags_collection[i_index][t_index] != OTHER_TAG:
+                        final_tag[t_index]= text_tags_collection[i_index][t_index]
+        print(final_tag)
+        if len(sentence_dict[key]) != len(final_tag):
+            print("not fine",len(sentence_dict[key]), len(final_tag))
+            sys.exit()
+        else:
+            for i in list(zip(tweet.split(), sentence_dict[tweet],final_tag)):
+                print(i)
+            y_true.append(sentence_dict[tweet])
+            y_pred.append(final_tag)
+            nooj_train_pred_dict[tweet]= final_tag
 
+            # ucd_train.write("*START-SENTENCE*,RG\n")
+            # #TODO replace B- wit I- 
+            # for tweet_token in tweet.split():
+            #     ucd_train.write(tweet_token+",O\n")
+            # ucd_train.write("*END-SENTENCE*,RG\n")
+            print("F1", f1_score(sentence_dict[tweet], final_tag))
+            print("ACC", accuracy_score(sentence_dict[tweet], final_tag)) 
+            print("Report:", classification_report(sentence_dict[tweet], final_tag))
+
+import json
+with open(f'nooj-{split}.json', 'w') as fout:
+    
+    json.dump(nooj_train_pred_dict, fout)
+
+#Take care of things that didn
 # In[136]:
 print("Final Metric")
 print(f1_score(y_true, y_pred))
