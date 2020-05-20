@@ -27,17 +27,6 @@ PRED_DEV_FILE_PATH = ""
 GOLD_TEST_FILE_PATH = ""
 PRED_TEST_FILE_PATH = ""
 
-from itertools import groupby
-def splitWithIndices(s, c=' '):
- p = 0
- for k, g in groupby(s, lambda x:x==c):
-  q = p + sum(1 for i in g)
-  if not k:
-   yield p, q # or p, q-1 if you are really sure you want that
-  p = q
-
-
-
 source_lines =[]
 with open(SOURCE_FILE_PATH) as source_file:
     for line in source_file:
