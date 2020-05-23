@@ -166,14 +166,14 @@ def return_word_tag(tagged_sentence):
     return selected_text,selected_text_tags
 import copy
 counter = 0
-with open(f"unlabelled_conandoyle_{split}.csv","w") as ucd_train:
+with open(f"unlabelled_conandoyle_{split}.csv") as ucd_train:
     for red_sent in list(red_sentence_dict.keys()):
         key = red_sent.replace("<red>","").replace("</red>","")
         gold_tags = sentence_dict[key]
         pred_tags_collection = red_sentence_dict[red_sent]
         counter +=1
         if counter ==27 :
-            g = input("Enter your name : ") 
+            # g = input("Enter your name : ") 
             pass
         print(gold_tags,key.split(),counter)
         blank_tags = [OTHER_TAG]*len(key.split())
@@ -241,10 +241,10 @@ with open(f"unlabelled_conandoyle_{split}.csv","w") as ucd_train:
             print("ACC", accuracy_score(sentence_dict[tweet], final_tag)) 
             print("Report:", classification_report(sentence_dict[tweet], final_tag))
 
-import json
-with open(f'nooj-{split}.json', 'w') as fout:
+# import json
+# with open(f'nooj-{split}.json', 'w') as fout:
     
-    json.dump(nooj_train_pred_dict, fout)
+#     json.dump(nooj_train_pred_dict, fout)
 
 #Take care of things that didn
 # In[136]:
